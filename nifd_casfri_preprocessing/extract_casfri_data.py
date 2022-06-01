@@ -1,5 +1,9 @@
 import os
+import sys
+import argparse
 import subprocess
+from nifd_casfri_preprocessing import log_helper
+from nifd_casfri_preprocessing import sql
 
 
 def get_pg_connection_info() -> str:
@@ -7,18 +11,9 @@ def get_pg_connection_info() -> str:
 
 
 def extract(output_dir: str, inventory_id: str) -> None:
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    queries = {
-        "hdr": f"SELECT * FROM hdr_all where inventory_id = {inventory_id}",
-        "cas": f"SELECT * FROM cas_all where inventory_id = {inventory_id}",
-        "geo": f"SELECT * FROM geo_all inner join cas_all on cas_all.cas_id = geo_all.cas_id where cas_all.inventory_id = {inventory_id}",
-        "dst": f"SELECT * FROM dst_all inner join cas_all on cas_all.cas_id = dst_all.cas_id where cas_all.inventory_id = {inventory_id}",
-        "eco": f"SELECT * FROM eco_all inner join cas_all on cas_all.cas_id = eco_all.cas_id where cas_all.inventory_id = {inventory_id}",
-        "lyr": f"SELECT * FROM lyr_all inner join cas_all on cas_all.cas_id = lyr_all.cas_id where cas_all.inventory_id = {inventory_id}",
-        "nfl": f"SELECT * FROM nfl_all inner join cas_all on cas_all.cas_id = nfl_all.cas_id where cas_all.inventory_id = {inventory_id}",
-    }
-    for idx, (name, query) in enumerate(queries.items()):
+
+    logger = log_helper.get_logger()
+    for idx, name in enumerate(sql.NAMES):
         args = [
             "ogr2ogr",
             "-f",
@@ -28,10 +23,43 @@ def extract(output_dir: str, inventory_id: str) -> None:
             "-nln",
             name,
             "-sql",
-            query,
+            sql.get_inventory_id_fitered_query(name, inventory_id),
         ]
         if idx == 0:
             args.append("-overwrite")
         else:
             args.append("-update")
+        logger.info(f"calling: {args}")
         subprocess.check_call(args)
+
+
+def extract_main(args):
+    parser = argparse.ArgumentParser(
+        description=(
+            "Extract a single inventory from the nfid casfri db as a "
+            "`GeoPackage`"
+        )
+    )
+    parser.add_argument(
+        "--inventory_id",
+        help="The inventory id within the casfri db to extract. Eg. 'AB01'",
+    )
+    parser.add_argument(
+        "--output_dir", help="The directory into which to write the geopackage"
+    )
+    args = parser.parse_args(args=args)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+    log_helper.start_logging(args.output_dir, "INFO")
+    try:
+        extract(args.output_dir, args.inventory_id)
+    except Exception:
+        log_helper.get_logger().exception("")
+
+
+def main():
+    extract_main(sys.argv[1:])
+
+
+if __name__ == "__main__":
+    main()
