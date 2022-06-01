@@ -1,1 +1,1 @@
-SELECT * FROM cas_all where inventory_id = {inventory_id}
+SELECT * FROM cas_all where inventory_id = '{inventory_id}'

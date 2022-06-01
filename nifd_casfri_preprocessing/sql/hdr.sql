@@ -1,1 +1,1 @@
-SELECT * FROM hdr_all where inventory_id = {inventory_id}
+SELECT hdr_all.* FROM hdr_all where inventory_id = '{inventory_id}'
