@@ -12,12 +12,15 @@ def get_pg_connection_info() -> str:
 def extract(output_dir: str, inventory_id: str) -> None:
 
     logger = log_helper.get_logger()
+    output_path = os.path.join(output_dir, f"casfri_{inventory_id}.gpkg")
+    if os.path.exists(output_path):
+        os.unlink(output_path)
     for idx, name in enumerate(sql.NAMES):
         args = [
             "ogr2ogr",
             "-f",
-            '"GPKG"',
-            os.path.join(output_dir, f"casfri_{inventory_id}.gpkg"),
+            "GPKG",
+            output_path,
             f"PG:{get_pg_connection_info()}",
             "-nln",
             name,
