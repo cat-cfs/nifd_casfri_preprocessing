@@ -2,3 +2,5 @@ venv
 .vscode
 *.ipynb
 .ipynb_checkpoints
+build
+*.egg-info
