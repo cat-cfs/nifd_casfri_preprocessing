@@ -1,6 +1,6 @@
 import os
 
-NAMES = [
+NAMES: list[str] = [
     "hdr",
     "cas",
     "geo",
@@ -11,10 +11,10 @@ NAMES = [
 ]
 
 
-def _get_script_dir():
+def _get_script_dir() -> str:
     return os.path.dirname(os.path.realpath(__file__))
 
 
-def get_inventory_id_fitered_query(name, inventory_id):
-    with open(os.path.join(_get_script_dir(), "{name}.sql")) as fp:
-        return fp.read().format(inventory_id)
+def get_inventory_id_fitered_query(name: str, inventory_id: int) -> str:
+    with open(os.path.join(_get_script_dir(), f"{name}.sql")) as fp:
+        return fp.read().format(inventory_id=int(inventory_id))
