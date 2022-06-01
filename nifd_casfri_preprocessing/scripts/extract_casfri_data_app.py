@@ -15,9 +15,11 @@ def extract_main(args):
     parser.add_argument(
         "--inventory_id",
         help="The inventory id within the casfri db to extract. Eg. 'AB01'",
+        required=True
     )
     parser.add_argument(
-        "--output_dir", help="The directory into which to write the geopackage"
+        "--output_dir", help="The directory into which to write the geopackage",
+        required=True
     )
     args = parser.parse_args(args=args)
     if not os.path.exists(args.output_dir):
