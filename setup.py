@@ -9,7 +9,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
-queries = [os.path.join("nifd_casfri_preprocessing", "sql", "*.sql")]
+queries = [os.path.join("sql", "*.sql")]
 
 extract_app = "nifd_casfri_preprocessing.scripts.extract_casfri_data_app:main"
 console_scripts = [
