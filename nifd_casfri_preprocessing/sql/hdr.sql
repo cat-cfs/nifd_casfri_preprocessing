@@ -1,0 +1,1 @@
+SELECT * FROM hdr_all where inventory_id = {inventory_id}
