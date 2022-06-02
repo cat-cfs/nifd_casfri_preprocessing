@@ -1,5 +1,5 @@
 import os
-
+import sqlite3
 import subprocess
 from nifd_casfri_preprocessing import log_helper
 from nifd_casfri_preprocessing import sql
@@ -7,6 +7,12 @@ from nifd_casfri_preprocessing import sql
 
 def get_pg_connection_info() -> str:
     return "host=localhost dbname=nifd port=6666 user=casfri password=casfri"
+
+
+def _vacuum_sqlite(path: str) -> None:
+    conn = sqlite3.connect(path)
+    conn.execute("VACUUM")
+    conn.close()
 
 
 def extract(output_dir: str, inventory_id: str) -> None:
@@ -33,3 +39,5 @@ def extract(output_dir: str, inventory_id: str) -> None:
             args.append("-update")
         logger.info(f"calling: {args}")
         subprocess.check_call(args)
+        logger.info("running sqlite vacuum")
+        _vacuum_sqlite(output_path)
