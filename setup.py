@@ -18,7 +18,7 @@ console_scripts = [
 
 setup(
     name="nifd_casfri_preprocessing",
-    version="0.2.0",
+    version="0.2.1",
     description="nifd casfri preprocessing scripts",
     long_description=long_description,
     long_description_content_type="text/markdown",
