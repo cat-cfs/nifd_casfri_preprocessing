@@ -2,6 +2,10 @@ import enum
 import pandas as pd
 import sqlalchemy as sa
 from IPython.display import display
+from IPython.display import Markdown
+from nifd_casfri_preprocessing import sql
+import matplotlib.pyplot as plt
+
 
 _cas_analysis_cols = [
     "stand_structure",
@@ -84,26 +88,28 @@ class DatabaseType(enum.Enum):
     geopackage = 1
 
 
-def get_data_summary(url: str, type: DatabaseType, inventory_id: str):
-    engine = sa.create_engine(url)
+def _sql_func(table_name: str, type: DatabaseType, inventory_id: str):
+    if type == DatabaseType.casfri_postgres:
+        return sql.get_inventory_id_fitered_query(table_name, inventory_id)
+    elif type == DatabaseType.geopackage:
+        return sql.get_unfiltered_query(table_name)
 
-    hdr = pd.read_sql("SELECT * from hdr", engine)
-    cas = pd.read_sql("SELECT * from cas", engine)
-    lyr = pd.read_sql("SELECT * from lyr", engine).merge(
-        cas[["cas_id", "casfri_area"]]
-    )
-    eco = pd.read_sql("SELECT * from eco", engine).merge(
-        cas[["cas_id", "casfri_area"]]
-    )
 
-    nfl = pd.read_sql("SELECT * from nfl", engine).merge(
-        cas[["cas_id", "casfri_area"]]
-    )
-    dst = pd.read_sql("SELECT * from dst", engine).merge(
-        cas[["cas_id", "casfri_area"]]
-    )
+def _merge_area(df: pd.DataFrame, cas_df: pd.DataFrame) -> pd.DataFrame:
+    return df.merge(cas_df[["cas_id", "casfri_area"]])
 
-    display(hdr.transpose())
+
+def _load_data(
+    engine: sa.engine.Engine, database_type: DatabaseType, inventory_id: str
+) -> dict[str, pd.DataFrame]:
+    data = {}
+    for name in sql.NAMES:
+        data[name] = pd.read_sql(_sql_func(name, type, inventory_id))
+
+    for name in ["lyr", "eco", "nfl", "dst"]:
+        data[name] = _merge_area(data[name], data["cas"])
+
+    return data
 
 
 def _compile_summary(
@@ -112,7 +118,7 @@ def _compile_summary(
     lyr: pd.DataFrame,
     nfl: pd.DataFrame,
     dst: pd.DataFrame,
-):
+) -> dict:
     analysis = {
         "cas": {},
         "eco": {},
@@ -188,3 +194,72 @@ def _compile_summary(
                 .sum()
             )
         analysis["dst"][layer_id] = data
+
+    return analysis
+
+
+def get_data_summary(
+    url: str, database_type: DatabaseType, inventory_id: str
+) -> dict:
+    engine = sa.create_engine(url)
+
+    data = _load_data(engine, database_type, inventory_id)
+
+    analysis = _compile_summary(
+        data["cas"],
+        data["eco"],
+        data["lyr"],
+        data["nfl"],
+        data["dst"],
+    )
+    return analysis
+
+
+def display(inventory_id: str, data: dict[str, pd.DataFrame], analysis: dict) ->None:
+    for k in analysis["dst"].keys():
+        fig, axes = plt.subplots(nrows=3, ncols=4, figsize=(15, 15))
+        for idx, (name, df) in enumerate(analysis["dst"][k].items()):
+            df.plot(ax=axes[idx // 4, idx % 4], kind="bar")
+            fig.suptitle(
+                f"{inventory_id} casfri dst (layer id {k})", fontsize=16
+            )
+            plt.tight_layout()
+
+    display(Markdown(f"## {inventory_id} casfri nfl table summary (layer id {k})"))
+    for k in analysis["nfl"].keys():
+        fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(15, 15))
+        for idx, (name, df) in enumerate(analysis["nfl"][k].items()):
+            df.plot(ax=axes[idx // 3, idx % 3], kind="bar")
+            plt.tight_layout()
+
+    for k in analysis["lyr"].keys():
+        fig, axes = plt.subplots(nrows=5, ncols=3, figsize=(15, 15))
+        for idx, (name, df) in enumerate(analysis["lyr"][k].items()):
+            df.plot(ax=axes[idx // 3, idx % 3], kind="bar")
+            fig.suptitle(
+                f"{inventory_id} casfri lyr table summary (layer id {k})",
+                fontsize=16,
+            )
+            plt.tight_layout()
+
+    for k in analysis["lyr_species"].keys():
+        fig, axes = plt.subplots(nrows=10, ncols=2, figsize=(15, 40))
+        for idx, (name, df) in enumerate(analysis["lyr_species"][k].items()):
+            df.plot(ax=axes[idx // 2, idx % 2], kind="bar")
+            fig.suptitle(
+                f"{inventory_id} casfri lyr (species) table summary (layer id {k})",
+                fontsize=16,
+            )
+            plt.tight_layout()
+
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(10, 15))
+    for idx, (name, df) in enumerate(analysis["eco"].items()):
+        df.plot(ax=axes[idx // 2, idx % 2], kind="bar")
+        fig.suptitle(f"{inventory_id} casfri eco table summary", fontsize=16)
+        plt.tight_layout()
+
+    fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 15))
+    for idx, (name, df) in enumerate(analysis["cas"].items()):
+        df.plot(ax=axes[idx % 3], kind="bar")
+        fig.suptitle(f"{inventory_id} casfri cas table summary", fontsize=16)
+        plt.tight_layout()
