@@ -43,16 +43,20 @@ summary.get_tables()
 ```
 
 ```python
+
+```
+
+```python
 data_summary.display_summary(inventory_id, summary)
             
 ```
 
 ```python
-
+dst = summary.get_raw_table("dst")
 ```
 
 ```python
-
+dst[["cas_id", "casfri_area"]].drop_duplicates("cas_id")["casfri_area"].sum()
 ```
 
 ```python
