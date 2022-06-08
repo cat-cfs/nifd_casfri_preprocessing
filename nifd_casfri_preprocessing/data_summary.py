@@ -295,16 +295,17 @@ class Summary:
         for table in self.get_tables():
             for layer in self.get_layers(table):
                 summary_data = self.get_summary_data(
-                    table, layer, cleaned=False
+                    table, layer, cleaned=True
                 )
                 for key, df in summary_data.items():
-                    df.to_csv(os.path.join(output_dir, key))
+                    df.to_csv(os.path.join(output_dir, f"{key}.csv"))
 
-    def save_raw_tables(self, output_dir):
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        for k, v in self._data.items():
-            v.to_parquet(os.path.join(output_dir, f"{k}.parquet"), index=False)
+
+def save_raw_tables(data, output_dir):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    for k, v in data.items():
+        v.to_parquet(os.path.join(output_dir, f"{k}.parquet"), index=False)
 
 
 def load_summary(data_dir: str) -> Summary:
