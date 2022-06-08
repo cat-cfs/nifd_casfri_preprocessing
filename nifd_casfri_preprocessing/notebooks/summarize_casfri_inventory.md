@@ -35,9 +35,30 @@ data = data_summary.load_data(url, database_type, inventory_id)
 ```
 
 ```python
-summary = data_summary.compile_summary(data)
+summary = data_summary.Summary(data)
+```
+
+```python
+summary.get_tables()
 ```
 
 ```python
 data_summary.display_summary(inventory_id, summary)
+            
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
+```
+
+```python
+
 ```
