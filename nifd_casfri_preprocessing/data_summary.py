@@ -138,11 +138,23 @@ def clean_nulls(df: pd.DataFrame) -> tuple[pd.DataFrame, float]:
 class Summary:
     def __init__(self, data: dict[str, pd.DataFrame]):
         self._data = data
+        self._table_areas: dict[str, float] = self._compute_table_area_totals()
         self._summary_data: dict[str, pd.DataFrame] = {}
         self._summary_data_cleaned: dict[str, pd.DataFrame] = {}
         self._null_summary: dict[str, float] = {}
         self._directory: dict[str, dict[Union[int, None], list[str]]] = {}
         self._compile_summary()
+
+    def _compute_table_area_totals(self):
+        areas = {}
+        for table in ["cas", "eco", "lyr", "nfl", "dst"]:
+            raw_table = self._data[table]
+            areas[table] = (
+                raw_table[["cas_id", "casfri_area"]]
+                .drop_duplicates("cas_id")["casfri_area"]
+                .sum()
+            )
+        return areas
 
     def insert(
         self, df: pd.DataFrame, table: str, column: str, layer_id: int = None
@@ -178,11 +190,15 @@ class Summary:
         data = []
         for key in self._directory[table][layer_id]:
             if key in self._null_summary:
-                data.append([key, self._null_summary[key]])
+                total_area = self._table_areas[table]
+                data.append([key, self._null_summary[key], total_area])
         if data:
-            return pd.DataFrame(
-                columns=["col", "null_area"], data=data
+
+            df = pd.DataFrame(
+                columns=["col", "null_area", "total_area"], data=data
             ).set_index("col")
+            df["percent_null"] = (df["null_area"] / df["total_area"]) * 100.0
+            return df
         return None
 
     def get_summary_data(
