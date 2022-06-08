@@ -1,3 +1,4 @@
+import os
 import enum
 from typing import Union
 import pandas as pd
@@ -7,6 +8,7 @@ from IPython.display import Markdown
 from nifd_casfri_preprocessing import sql
 import matplotlib.pyplot as plt
 from nifd_casfri_preprocessing import log_helper
+
 
 logger = log_helper.get_logger()
 _cas_analysis_cols = [
@@ -284,6 +286,23 @@ class Summary:
                     .sum()
                 )
                 self.insert(df, "dst", dst_analysis_col, layer_id)
+
+    def save_summary_tables(self, output_dir):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        for table in self.get_tables():
+            for layer in self.get_layers(table):
+                summary_data = self.get_summary_data(
+                    table, layer, cleaned=False
+                )
+                for key, df in summary_data.items():
+                    df.to_csv(os.path.join(output_dir, key))
+
+    def save_raw_tables(self, output_dir):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        for k, v in self._data.items():
+            v.to_parquet(os.path.join(output_dir, f"{k}.parquet"), index=False)
 
 
 def display_summary(inventory_id: str, summary: Summary) -> None:
