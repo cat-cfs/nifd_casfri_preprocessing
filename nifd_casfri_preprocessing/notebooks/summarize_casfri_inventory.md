@@ -13,12 +13,11 @@ jupyter:
     name: python3
 ---
 
-```python
-# sqlite
-inventory_id = "PE01"
-raw_data_path = r"C:\Users\scott\dev\projects\2022_wall_to_wall\raw_tables"
+```python tags=["parameters"]
+inventory_id = ""
+raw_data_path = ""
+output_path = ""
 ```
-
 
 ```python
 from nifd_casfri_preprocessing import data_summary
@@ -27,13 +26,10 @@ from nifd_casfri_preprocessing import data_summary
 
 ```python
 summary = data_summary.load_summary(raw_data_path)
+summary.save_summary_tables(output_path)
 ```
 
 
 ```python
 data_summary.display_summary(inventory_id, summary)
-```
-
-```python
-
 ```
