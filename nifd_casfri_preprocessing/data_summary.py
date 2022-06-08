@@ -113,6 +113,8 @@ def load_data(
 ) -> dict[str, pd.DataFrame]:
     data = {}
     for name in sql.NAMES:
+        if name == "geo":
+            continue
         query = _sql_func(name, database_type, inventory_id)
         logger.info(f"query: {query}")
         data[name] = pd.read_sql(query, engine)
@@ -305,6 +307,15 @@ class Summary:
             v.to_parquet(os.path.join(output_dir, f"{k}.parquet"), index=False)
 
 
+def load_summary(data_dir: str) -> Summary:
+    data = {}
+    for table in ["hdr", "cas", "eco", "lyr", "nfl", "dst"]:
+        data[table] = pd.read_parquet(
+            os.path.join(data_dir, f"{table}.parquet")
+        )
+    return Summary(data)
+
+
 def display_summary(inventory_id: str, summary: Summary) -> None:
     display(Markdown(f"# {inventory_id}"))
 
@@ -320,9 +331,9 @@ def display_summary(inventory_id: str, summary: Summary) -> None:
             for key, df in summary_data.items():
                 display(Markdown(f"#### {key}"))
                 if df.index.is_numeric() and len(df.index) > 1:
-                    df.plot(marker=".", linestyle="solid")
+                    df.plot(marker="o", linestyle="none", figsize=(15, 5))
                 else:
-                    df.plot(kind="bar")
+                    df.plot(kind="bar", figsize=(15, 5))
                 plt.show()
                 plt.close("all")
             display(
