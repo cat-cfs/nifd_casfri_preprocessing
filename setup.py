@@ -10,20 +10,23 @@ with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
 queries = [os.path.join("sql", "*.sql")]
+notebooks = [os.path.join("notebooks", "*.md")]
 
 extract_app = "nifd_casfri_preprocessing.scripts.extract_casfri_data_app:main"
+summary_app = "nifd_casfri_preprocessing.scripts.nifd_casfri_summary_app:main"
 console_scripts = [
     "nifd_casfri_extract = " + extract_app,
+    "nifd_casfri_summary = " + summary_app,
 ]
 
 setup(
     name="nifd_casfri_preprocessing",
-    version="0.2.1",
+    version="0.4.0",
     description="nifd casfri preprocessing scripts",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(exclude=["test*"]),
-    package_data={"nifd_casfri_preprocessing": queries},
+    package_data={"nifd_casfri_preprocessing": queries + notebooks},
     entry_points={"console_scripts": console_scripts},
     install_requires=requirements,
 )
