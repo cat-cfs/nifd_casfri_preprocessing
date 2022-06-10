@@ -82,5 +82,19 @@ relationships
 ```
 
 ```python
+cas_inventory_ids = pd.read_sql(
+    f"SELECT distinct(inventory_id) from cas_all", engine
+)
+```
+
+```python
+hdr_all = pd.read_sql("SELECT * from hdr_all", engine)
+```
+
+```python
+cas_inventory_ids
+```
+
+```python
 
 ```
