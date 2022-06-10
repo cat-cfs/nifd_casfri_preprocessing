@@ -4,3 +4,6 @@ ipython
 matplotlib
 jupyter
 papermill
+pyarrow
+nbformat
+nbconvert

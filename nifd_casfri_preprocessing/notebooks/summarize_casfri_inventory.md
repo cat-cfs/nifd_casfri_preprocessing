@@ -13,30 +13,22 @@ jupyter:
     name: python3
 ---
 
-```python
-# sqlite
-path = r"C:\Users\scott\dev\projects\2022_wall_to_wall\casfri_PE01.gpkg"
-url = f"sqlite:///{path}"
-inventory_id="PE01"
-database_type=1
-```
-
-```python
-# postgres
-# url = "postgresql://casfri:casfri@localhost:6666/nifd"
+```python tags=["parameters"]
+inventory_id = ""
+raw_data_path = ""
+output_path = ""
 ```
 
 ```python
 from nifd_casfri_preprocessing import data_summary
 ```
 
-```python
-data = data_summary.load_data(url, database_type, inventory_id)
-```
 
 ```python
-summary = data_summary.compile_summary(data)
+summary = data_summary.load_summary(raw_data_path)
+summary.save_summary_tables(output_path)
 ```
+
 
 ```python
 data_summary.display_summary(inventory_id, summary)
