@@ -55,6 +55,30 @@ with pd.ExcelWriter(os.path.join(out_dir,"data_sample.xlsx")) as writer:
 ```
 
 ```python
+pd.read_sql("""
+SELECT
+geo_all.cas_id, 
+ROW_NUMBER() OVER (ORDER BY geo_all.cas_id) AS raster_id
+FROM geo_all
+inner join cas_all on cas_all.cas_id = geo_all.cas_id
+where cas_all.inventory_id = 'PE01'
+limit 10
+""", engine)
+# GROUP BY cas_id;
+```
+
+```python
+
+```
+
+<!-- #region -->
+rasterization command
+```powershell
+gdal_rasterize -a raster_id -tr 30.0 30.0 PG:host="localhost dbname=nifd port=6666 user=casfri password=casfri" -sql "SELECT geo_all.geometry, ROW_NUMBER() OVER (ORDER BY geo_all.cas_id) AS raster_id FROM geo_all inner join cas_all on cas_all.cas_id = geo_all.cas_id where cas_all.inventory_id = 'PE01'" -co COMPRESS=DEFLATE -co BIGTIFF=YES -ot Int64 -a_nodata -1 PEI_CAS_ID.tiff
+```
+<!-- #endregion -->
+
+```python
 pd.read_sql("SELECT * from cas_all limit 10", engine)
 ```
 
@@ -92,7 +116,7 @@ hdr_all = pd.read_sql("SELECT * from hdr_all", engine)
 ```
 
 ```python
-cas_inventory_ids
+cas_inventory_ids.inventory_id.to_list()
 ```
 
 ```python
