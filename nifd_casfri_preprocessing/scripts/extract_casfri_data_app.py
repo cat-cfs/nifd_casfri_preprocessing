@@ -1,7 +1,7 @@
 import os
 import sys
 import argparse
-from nifd_casfri_preprocessing import extract_casfri_data
+from nifd_casfri_preprocessing import casfri_data
 from nifd_casfri_preprocessing import log_helper
 
 
@@ -27,7 +27,7 @@ def extract_main(args):
         os.makedirs(args.output_dir)
     log_helper.start_logging(args.output_dir, "INFO")
     try:
-        extract_casfri_data.extract(args.output_dir, args.inventory_id)
+        casfri_data.extract_to_geopackage(args.output_dir, args.inventory_id)
     except Exception:
         log_helper.get_logger().exception("")
 
