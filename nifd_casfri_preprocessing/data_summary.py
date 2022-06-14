@@ -1,14 +1,13 @@
 import os
-import enum
+
 from typing import Union
 import pandas as pd
-import sqlalchemy as sa
 from IPython.display import display
 from IPython.display import Markdown
-from nifd_casfri_preprocessing import sql
+
 import matplotlib.pyplot as plt
 from nifd_casfri_preprocessing import log_helper
-
+from nifd_casfri_preprocessing import casfri_data
 
 logger = log_helper.get_logger()
 _cas_analysis_cols = [
@@ -86,43 +85,8 @@ _dst_analysis_cols = [
 ]
 
 
-class DatabaseType(enum.Enum):
-    casfri_postgres = 0
-    geopackage = 1
-
-
-def _sql_func(
-    table_name: str, database_type: Union[int, DatabaseType], inventory_id: str
-):
-    database_type = DatabaseType(database_type)
-    if database_type == DatabaseType.casfri_postgres:
-        return sql.get_inventory_id_fitered_query(table_name, inventory_id)
-    elif database_type == DatabaseType.geopackage:
-        return sql.get_unfiltered_query(table_name)
-    raise ValueError()
-
-
 def _merge_area(df: pd.DataFrame, cas_df: pd.DataFrame) -> pd.DataFrame:
     return df.merge(cas_df[["cas_id", "casfri_area"]])
-
-
-def load_data(
-    engine: sa.engine.Engine,
-    database_type: Union[int, DatabaseType],
-    inventory_id: str,
-) -> dict[str, pd.DataFrame]:
-    data = {}
-    for name in sql.NAMES:
-        if name == "geo":
-            continue
-        query = _sql_func(name, database_type, inventory_id)
-        logger.info(f"query: {query}")
-        data[name] = pd.read_sql(query, engine)
-
-    for name in ["lyr", "eco", "nfl", "dst"]:
-        data[name] = _merge_area(data[name], data["cas"])
-
-    return data
 
 
 def clean_nulls(df: pd.DataFrame) -> tuple[pd.DataFrame, float]:
@@ -301,19 +265,10 @@ class Summary:
                     df.to_csv(os.path.join(output_dir, f"{key}.csv"))
 
 
-def save_raw_tables(data, output_dir):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    for k, v in data.items():
-        v.to_parquet(os.path.join(output_dir, f"{k}.parquet"), index=False)
-
-
 def load_summary(data_dir: str) -> Summary:
-    data = {}
-    for table in ["hdr", "cas", "eco", "lyr", "nfl", "dst"]:
-        data[table] = pd.read_parquet(
-            os.path.join(data_dir, f"{table}.parquet")
-        )
+    data = casfri_data.load_parquet(data_dir)
+    for name in ["lyr", "eco", "nfl", "dst"]:
+        data[name] = _merge_area(data[name], data["cas"])
     return Summary(data)
 
 
