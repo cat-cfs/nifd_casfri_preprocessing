@@ -96,7 +96,6 @@ def extract_to_parquet_with_raster(
     host: str,
     port: str,
     database: str,
-    database_type: DatabaseType,
     output_dir: str,
     inventory_id: str,
     resolution: float,
@@ -106,7 +105,7 @@ def extract_to_parquet_with_raster(
             "postgresql", username, password, host, port, database
         )
     )
-    data = load_data(url, database_type, inventory_id)
+    data = load_data(url, DatabaseType.casfri_postgres, inventory_id)
     data["geo_lookup"] = pd.read_sql(
         sql.get_inventory_id_fitered_query(
             "gdal_rasterization_lookup", inventory_id
