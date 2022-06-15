@@ -34,7 +34,10 @@ def extract_main(args):
 
     parser.add_argument(
         "--resolution",
-        help="the rasterization resolution in metres, this is required if output_format is `parquet`",
+        help=(
+            "the rasterization resolution in metres, this is required "
+            "if output_format is `parquet`"
+        ),
         required=False,
     )
     args = parser.parse_args(args=args)
