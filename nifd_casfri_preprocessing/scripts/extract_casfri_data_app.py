@@ -31,6 +31,12 @@ def extract_main(args):
         help="the output format: can be one of `GeoPackage` or `parquet`",
         required=True,
     )
+    
+    parser.add_argument(
+        "--resolution",
+        help="the rasterization resolution in metres, this is required if output_format is `parquet`",
+        required=False,
+    )
     args = parser.parse_args(args=args)
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
@@ -47,6 +53,8 @@ def extract_main(args):
                 args.inventory_id,
             )
         elif args.output_format.lower() == "parquet":
+            if not args.resolution:
+                raise ValueError("resolution required when output_format is parquet")
             casfri_data.extract_to_parquet_with_raster(
                 args.username,
                 args.password,
@@ -55,6 +63,7 @@ def extract_main(args):
                 args.database,
                 args.output_dir,
                 args.inventory_id,
+                args.resolution
             )
     except Exception:
         log_helper.get_logger().exception("")
