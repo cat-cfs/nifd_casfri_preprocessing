@@ -3,7 +3,8 @@ import enum
 from typing import Union
 import pandas as pd
 import sqlite3
-import sqlalchemy as sa
+from sqlalchemy.engine.url import URL
+
 import subprocess
 from nifd_casfri_preprocessing import log_helper
 from nifd_casfri_preprocessing import sql
@@ -16,8 +17,34 @@ class DatabaseType(enum.Enum):
     geopackage = 1
 
 
-def get_pg_connection_info() -> str:
-    return "host=localhost dbname=nifd port=6666 user=casfri password=casfri"
+def get_sqlachemy_url(
+    drivername: str,
+    username: str,
+    password: str,
+    host: str,
+    port: str,
+    database: str,
+) -> URL:
+    config = dict(
+        drivername=drivername,
+        username=username,
+        password=password,
+        host=host,
+        port=port,
+        database=database,
+    )
+
+    url = URL.create(**config)
+    return url
+
+
+def get_gdal_pg_connection_info(
+    username: str, password: str, host: str, port: str, database: str
+) -> str:
+    return (
+        f"PG:host={host} dbname={database} port={port} "
+        f"user={username} password={password}"
+    )
 
 
 def _vacuum_sqlite(path: str) -> None:
@@ -26,17 +53,28 @@ def _vacuum_sqlite(path: str) -> None:
     conn.close()
 
 
-def extract_to_geopackage(output_dir: str, inventory_id: str) -> None:
+def extract_to_geopackage(
+    username: str,
+    password: str,
+    host: str,
+    port: str,
+    database: str,
+    output_dir: str,
+    inventory_id: str,
+) -> None:
     output_path = os.path.join(output_dir, f"casfri_{inventory_id}.gpkg")
     if os.path.exists(output_path):
         os.unlink(output_path)
+    connection_str = get_gdal_pg_connection_info(
+        username, password, host, port, database
+    )
     for idx, name in enumerate(sql.NAMES):
         args = [
             "ogr2ogr",
             "-f",
             "GPKG",
             output_path,
-            f"PG:{get_pg_connection_info()}",
+            connection_str,
             "-nln",
             name,
             "-sql",
@@ -53,12 +91,21 @@ def extract_to_geopackage(output_dir: str, inventory_id: str) -> None:
 
 
 def extract_to_parquet_with_raster(
-    url: str,
+    username: str,
+    password: str,
+    host: str,
+    port: str,
+    database: str,
     database_type: DatabaseType,
     output_dir: str,
     inventory_id: str,
     resolution: float,
 ) -> None:
+    url = str(
+        get_sqlachemy_url(
+            "postgresql", username, password, host, port, database
+        )
+    )
     data = load_data(url, database_type, inventory_id)
     data["geo_lookup"] = pd.read_sql(
         sql.get_inventory_id_fitered_query(
@@ -75,7 +122,7 @@ def extract_to_parquet_with_raster(
         "-tr",
         str(resolution),
         str(resolution),
-        f"PG:{get_pg_connection_info()}",
+        get_gdal_pg_connection_info(username, password, host, port, database),
         "-sql",
         sql.get_inventory_id_fitered_query("gdal_rasterization", inventory_id),
         "-co",
@@ -104,7 +151,7 @@ def _sql_func(
 
 
 def load_data(
-    engine: sa.engine.Engine,
+    url: str,
     database_type: Union[int, DatabaseType],
     inventory_id: str,
 ) -> dict[str, pd.DataFrame]:
@@ -114,7 +161,7 @@ def load_data(
             continue
         query = _sql_func(name, database_type, inventory_id)
         logger.info(f"query: {query}")
-        data[name] = pd.read_sql(query, engine)
+        data[name] = pd.read_sql(query, url)
 
     return data
 
