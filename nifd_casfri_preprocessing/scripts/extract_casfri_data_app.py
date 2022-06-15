@@ -8,10 +8,14 @@ from nifd_casfri_preprocessing import log_helper
 def extract_main(args):
     parser = argparse.ArgumentParser(
         description=(
-            "Extract a single inventory from the nfid casfri db as a "
-            "`GeoPackage`"
+            "Extract a single inventory from the nfid casfri db into "
+            "`GeoPackage`, or `parquet`"
         )
     )
+    for db_info in ["host", "port", "database", "username", "password"]:
+        parser.add_argument(
+            f"--{db_info}", help="database connection info", required=True
+        )
     parser.add_argument(
         "--inventory_id",
         help="The inventory id within the casfri db to extract. Eg. 'AB01'",
@@ -22,12 +26,36 @@ def extract_main(args):
         help="The directory into which to write the geopackage",
         required=True,
     )
+    parser.add_argument(
+        "--output_format",
+        help="the output format: can be one of `GeoPackage` or `parquet`",
+        required=True,
+    )
     args = parser.parse_args(args=args)
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     log_helper.start_logging(args.output_dir, "INFO")
     try:
-        casfri_data.extract_to_geopackage(args.output_dir, args.inventory_id)
+        if args.output_format.lower() == "geopackage":
+            casfri_data.extract_to_geopackage(
+                args.username,
+                args.password,
+                args.host,
+                args.port,
+                args.database,
+                args.output_dir,
+                args.inventory_id,
+            )
+        elif args.output_format.lower() == "parquet":
+            casfri_data.extract_to_parquet_with_raster(
+                args.username,
+                args.password,
+                args.host,
+                args.port,
+                args.database,
+                args.output_dir,
+                args.inventory_id,
+            )
     except Exception:
         log_helper.get_logger().exception("")
 
