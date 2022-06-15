@@ -7,3 +7,4 @@ papermill
 pyarrow
 nbformat
 nbconvert
+psycopg2
