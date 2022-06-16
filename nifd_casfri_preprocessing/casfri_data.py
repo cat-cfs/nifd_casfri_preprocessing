@@ -113,6 +113,7 @@ def extract_to_parquet_with_raster(
         url,
     )
     save_raw_tables(data, output_dir)
+    raster_path = os.path.join(output_dir, f"{inventory_id}_cas_id.tiff")
 
     rasterization_args = [
         "gdal_rasterize",
@@ -129,13 +130,33 @@ def extract_to_parquet_with_raster(
         "-co",
         "BIGTIFF=YES",
         "-ot",
-        "Int64",
+        "Int32",
         "-a_nodata",
         "-1",
         os.path.join(output_dir, f"{inventory_id}_cas_id.tiff"),
     ]
+
     logger.info(f"calling: {rasterization_args}")
     subprocess.check_call(rasterization_args)
+
+    # also create a wgs84 version of the raster
+    wgs84_raster_path = os.path.join(
+        output_dir, f"{inventory_id}_cas_id_wgs84.tiff")
+    warp_args = [
+        "gdalwarp",
+        raster_path,
+        wgs84_raster_path,
+        "-t_srs"
+        "+proj=longlat +ellps=WGS84"
+        "-co",
+        "COMPRESS=DEFLATE",
+        "-co",
+        "BIGTIFF=YES",
+        "-ot",
+        "Int32",
+    ]
+    logger.info(f"calling: {warp_args}")
+    subprocess.check_call(warp_args)
 
 
 def _sql_func(
