@@ -1,5 +1,9 @@
 # nifd_casfri_preprocessing
 
+Requirements
+* python 3.9+
+* gdal command line tools
+
 ## extract an inventory as a parquet dataset
 
 Extracts information associated with the specified inventory into parquet tables along with a rasterized version of cas_id
