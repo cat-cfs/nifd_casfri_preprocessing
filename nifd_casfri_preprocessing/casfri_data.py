@@ -4,7 +4,7 @@ from typing import Union
 import pandas as pd
 import sqlite3
 from sqlalchemy.engine.url import URL
-
+from osgeo import gdal
 import subprocess
 from nifd_casfri_preprocessing import log_helper
 from nifd_casfri_preprocessing import sql
@@ -69,6 +69,7 @@ def extract_to_geopackage(
         username, password, host, port, database
     )
     for idx, name in enumerate(sql.NAMES):
+
         args = [
             "ogr2ogr",
             "-f",
@@ -108,47 +109,41 @@ def extract_to_parquet_with_raster(
     _extract_parquet(output_dir, inventory_id, url)
     raster_path = os.path.join(output_dir, f"{inventory_id}_cas_id.tiff")
 
-    rasterization_args = [
-        "gdal_rasterize",
-        "-a",
-        "raster_id",
-        "-tr",
-        str(resolution),
-        str(resolution),
-        get_gdal_pg_connection_info(username, password, host, port, database),
-        "-sql",
-        sql.get_inventory_id_fitered_query("gdal_rasterization", inventory_id),
-        "-co",
-        "COMPRESS=DEFLATE",
-        "-co",
-        "BIGTIFF=YES",
-        # "-ot",
-        # "Int32",
-        "-a_nodata",
-        "-1",
-        os.path.join(output_dir, f"{inventory_id}_cas_id.tiff"),
-    ]
-
-    logger.info(f"calling: {rasterization_args}")
-    subprocess.check_call(rasterization_args)
+    logger.info("calling gdal.Rasterize")
+    gdal.Rasterize(
+        destNameOrDestDS=os.path.join(
+            output_dir, f"{inventory_id}_cas_id.tiff"
+        ),
+        srcDS=get_gdal_pg_connection_info(
+            username, password, host, port, database
+        ),
+        options=gdal.RasterizeOptions(
+            SQLStatement=sql.get_inventory_id_fitered_query(
+                "gdal_rasterization", inventory_id
+            ),
+            attribute="raster_id",
+            xRes=resolution,
+            yRes=resolution,
+            creationOptions=["BIGTIFF=YES", "COMPRESS=DEFLATE"],
+            noData=-1,
+            outputType="Int32",
+        ),
+    )
 
     # also create a wgs84 version of the raster
     wgs84_raster_path = os.path.join(
         output_dir, f"{inventory_id}_cas_id_wgs84.tiff"
     )
-    warp_args = [
-        "gdalwarp",
-        raster_path,
-        wgs84_raster_path,
-        "-t_srs" "+proj=longlat +ellps=WGS84" "-co",
-        "COMPRESS=DEFLATE",
-        "-co",
-        "BIGTIFF=YES",
-        #"-ot",
-        #"Int32",
-    ]
-    logger.info(f"calling: {warp_args}")
-    subprocess.check_call(warp_args)
+    logger.info("calling gdal.Warp")
+    gdal.Warp(
+        destNameOrDestDS=wgs84_raster_path,
+        srcDSOrSrcDSTab=raster_path,
+        options=gdal.WarpOptions(
+            dstSRS="+proj=longlat +ellps=WGS84",
+            creationOptions=["BIGTIFF=YES", "COMPRESS=DEFLATE"],
+            outputType="Int32",
+        )
+    )
 
 
 def _extract_parquet(output_dir, inventory_id, url):
