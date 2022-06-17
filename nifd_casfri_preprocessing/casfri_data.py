@@ -122,8 +122,8 @@ def extract_to_parquet_with_raster(
         "COMPRESS=DEFLATE",
         "-co",
         "BIGTIFF=YES",
-        "-ot",
-        "Int32",
+        # "-ot",
+        # "Int32",
         "-a_nodata",
         "-1",
         os.path.join(output_dir, f"{inventory_id}_cas_id.tiff"),
@@ -144,8 +144,8 @@ def extract_to_parquet_with_raster(
         "COMPRESS=DEFLATE",
         "-co",
         "BIGTIFF=YES",
-        "-ot",
-        "Int32",
+        #"-ot",
+        #"Int32",
     ]
     logger.info(f"calling: {warp_args}")
     subprocess.check_call(warp_args)
