@@ -142,18 +142,17 @@ def extract_to_parquet_with_raster(
             dstSRS="+proj=longlat +ellps=WGS84",
             creationOptions=["BIGTIFF=YES", "COMPRESS=DEFLATE"],
             outputType="Int32",
-        )
+        ),
     )
 
 
 def _extract_parquet(output_dir, inventory_id, url):
     data = load_data(url, DatabaseType.casfri_postgres, inventory_id)
-    data["geo_lookup"] = pd.read_sql(
-        sql.get_inventory_id_fitered_query(
-            "gdal_rasterization_lookup", inventory_id
-        ),
-        url,
+    geo_lookup_query = sql.get_inventory_id_fitered_query(
+        "gdal_rasterization_lookup", inventory_id
     )
+    logger.info(f"query: {geo_lookup_query}")
+    data["geo_lookup"] = pd.read_sql(geo_lookup_query, url)
     save_raw_tables(data, output_dir)
 
 
