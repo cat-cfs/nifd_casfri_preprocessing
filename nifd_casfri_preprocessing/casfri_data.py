@@ -105,14 +105,7 @@ def extract_to_parquet_with_raster(
             "postgresql", username, password, host, port, database
         )
     )
-    data = load_data(url, DatabaseType.casfri_postgres, inventory_id)
-    data["geo_lookup"] = pd.read_sql(
-        sql.get_inventory_id_fitered_query(
-            "gdal_rasterization_lookup", inventory_id
-        ),
-        url,
-    )
-    save_raw_tables(data, output_dir)
+    _extract_parquet(output_dir, inventory_id, url)
     raster_path = os.path.join(output_dir, f"{inventory_id}_cas_id.tiff")
 
     rasterization_args = [
@@ -141,14 +134,13 @@ def extract_to_parquet_with_raster(
 
     # also create a wgs84 version of the raster
     wgs84_raster_path = os.path.join(
-        output_dir, f"{inventory_id}_cas_id_wgs84.tiff")
+        output_dir, f"{inventory_id}_cas_id_wgs84.tiff"
+    )
     warp_args = [
         "gdalwarp",
         raster_path,
         wgs84_raster_path,
-        "-t_srs"
-        "+proj=longlat +ellps=WGS84"
-        "-co",
+        "-t_srs" "+proj=longlat +ellps=WGS84" "-co",
         "COMPRESS=DEFLATE",
         "-co",
         "BIGTIFF=YES",
@@ -157,6 +149,17 @@ def extract_to_parquet_with_raster(
     ]
     logger.info(f"calling: {warp_args}")
     subprocess.check_call(warp_args)
+
+
+def _extract_parquet(output_dir, inventory_id, url):
+    data = load_data(url, DatabaseType.casfri_postgres, inventory_id)
+    data["geo_lookup"] = pd.read_sql(
+        sql.get_inventory_id_fitered_query(
+            "gdal_rasterization_lookup", inventory_id
+        ),
+        url,
+    )
+    save_raw_tables(data, output_dir)
 
 
 def _sql_func(
