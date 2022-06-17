@@ -8,3 +8,4 @@ pyarrow
 nbformat
 nbconvert
 psycopg2
+gdal
