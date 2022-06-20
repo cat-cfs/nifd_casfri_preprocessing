@@ -126,7 +126,7 @@ def extract_to_parquet_with_raster(
             yRes=resolution,
             creationOptions=["BIGTIFF=YES", "COMPRESS=DEFLATE"],
             noData=-1,
-            outputType="Int32",
+            outputType=gdal.GDT_Int32,
         ),
     )
 
@@ -141,7 +141,7 @@ def extract_to_parquet_with_raster(
         options=gdal.WarpOptions(
             dstSRS="+proj=longlat +ellps=WGS84",
             creationOptions=["BIGTIFF=YES", "COMPRESS=DEFLATE"],
-            outputType="Int32",
+            outputType=gdal.GDT_Int32,
         ),
     )
 
