@@ -5,51 +5,52 @@ from nifd_casfri_preprocessing.gis_helpers import gdal_helpers
 from nifd_casfri_preprocessing import casfri_data
 from nifd_casfri_preprocessing import log_helper
 
+logger = log_helper.get_logger()
 
 class ParquetGeoDataset:
     def __init__(self, data_dir: str, wgs84: bool):
-        self.data_dict: dict[str, pd.DataFrame] = casfri_data.load_parquet(
+        self._data_dict: dict[str, pd.DataFrame] = casfri_data.load_parquet(
             data_dir
         )
         raster_filename = "cas_id_wgs84.tiff" if wgs84 else "cas_id.tiff"
-        self.base_raster_path = os.path.join(data_dir, raster_filename)
-        self.raster = gdal_helpers.read_dataset(self.base_raster_path)
+        self._base_raster_path = os.path.join(data_dir, raster_filename)
+        self._raster = gdal_helpers.read_dataset(self.base_raster_path)
 
     @property
     def base_raster_path(self) -> str:
-        return self.base_raster_path
+        return self._base_raster_path
 
     @property
     def raster(self) -> gdal_helpers.GDALHelperDataset:
-        return self.raster
+        return self._raster
 
     @property
     def hdr(self) -> pd.DataFrame:
-        return self.data_dict["hdr"]
+        return self._data_dict["hdr"]
 
     @property
     def cas(self) -> pd.DataFrame:
-        return self.data_dict["cas"]
+        return self._data_dict["cas"]
 
     @property
     def eco(self) -> pd.DataFrame:
-        return self.data_dict["eco"]
+        return self._data_dict["eco"]
 
     @property
     def lyr(self) -> pd.DataFrame:
-        return self.data_dict["lyr"]
+        return self._data_dict["lyr"]
 
     @property
     def nfl(self) -> pd.DataFrame:
-        return self.data_dict["nfl"]
+        return self._data_dict["nfl"]
 
     @property
     def dst(self) -> pd.DataFrame:
-        return self.data_dict["dst"]
+        return self._data_dict["dst"]
 
     @property
     def geo_lookup(self) -> pd.DataFrame:
-        return self.data_dict["geo_lookup"]
+        return self._data_dict["geo_lookup"]
 
 
 def get_layer_subdir(layer_id: int) -> str:
@@ -204,8 +205,9 @@ def process_leading_species(
 def process_disturbance_events(
     layer_id: int, ds: ParquetGeoDataset, out_dir: str
 ) -> None:
-    dist_view = ds.dst[ds.dst["layer"] == layer_id].copy()
+    
     for disturbance_col_num in range(1, 4):
+        dist_view = ds.dst[ds.dst["layer"] == layer_id].copy()
         data_cols = [
             f"dist_type_{disturbance_col_num}",
             f"dist_year_{disturbance_col_num}",
@@ -339,8 +341,10 @@ def process_species_components(
     )
 
 
-def process(data_dir, wgs84, out_dir):
+def process(data_dir: str, wgs84: bool, age_relative_year: int, out_dir: str) -> None:
+    logger.info(f"loading dataset from {data_dir}")
     ds = ParquetGeoDataset(data_dir, wgs84)
+
     layer_index = create_layer_index(ds, out_dir)
     lyr_layer_ids = [
         int(x)
@@ -352,13 +356,13 @@ def process(data_dir, wgs84, out_dir):
     ]
     for layer_id in lyr_layer_ids:
         layer_subdir = os.path.join(out_dir, get_layer_subdir(layer_id))
-        log_helper.info("process origin data")
-        process_origin(layer_id, ds, layer_subdir)
-        log_helper.info("process leading species data")
+        logger.info("process origin data")
+        process_origin(layer_id, ds, layer_subdir, age_relative_year)
+        logger.info("process leading species data")
         process_leading_species(layer_id, ds, layer_subdir)
-        log_helper.info("process species components data")
+        logger.info("process species components data")
         process_species_components(layer_id, ds, layer_subdir)
     for layer_id in dst_layer_ids:
         layer_subdir = os.path.join(out_dir, get_layer_subdir(layer_id))
-        log_helper.info("process disturbance events data")
-        process_disturbance_events(layer_subdir, ds, layer_subdir)
+        logger.info("process disturbance events data")
+        process_disturbance_events(layer_id, ds, layer_subdir)
