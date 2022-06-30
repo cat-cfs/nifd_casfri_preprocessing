@@ -55,8 +55,34 @@ def get_layer_subdir(layer_id: int) -> str:
     pass
 
 
-def create_layer_reference(ds: ParquetGeoDataset) -> None:
-    ds.lyr.layer.unique()
+def create_layer_index(ds: ParquetGeoDataset, out_dir: str) -> pd.DataFrame:
+    lyr_layer_ids = set(list(ds.lyr["layer"].unique()))
+    dst_layer_ids = set(list(ds.dst["layer"].unique()))
+    all_layer_ids = lyr_layer_ids.union(dst_layer_ids)
+    layer_index = []
+    for _id in all_layer_ids:
+        subdir = get_layer_subdir(_id)
+        if not os.path.exists(subdir):
+            os.makedirs(subdir)
+        layer_index.append(
+            (
+                _id,
+                subdir,
+                _id in lyr_layer_ids,
+                _id in dst_layer_ids,
+            )
+        )
+    df = pd.DataFrame(
+        columns=[
+            "casfri_layer_id",
+            "subdir",
+            "defined_in_lyr",
+            "defined_in_dst",
+        ],
+        data=layer_index,
+    )
+    df.to_csv(os.path.join(out_dir, "layer_index.csv"), index=False)
+    return df
 
 
 def process_origin(
