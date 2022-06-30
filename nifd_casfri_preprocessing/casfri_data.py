@@ -111,7 +111,7 @@ def extract_to_parquet_with_raster(
 
     logger.info("calling gdal.Rasterize")
     gdal.Rasterize(
-        destNameOrDestDS=os.path.join(output_dir, f"cas_id.tiff"),
+        destNameOrDestDS=os.path.join(output_dir, "cas_id.tiff"),
         srcDS=get_gdal_pg_connection_info(
             username, password, host, port, database
         ),
@@ -129,7 +129,7 @@ def extract_to_parquet_with_raster(
     )
 
     # also create a wgs84 version of the raster
-    wgs84_raster_path = os.path.join(output_dir, f"cas_id_wgs84.tiff")
+    wgs84_raster_path = os.path.join(output_dir, "cas_id_wgs84.tiff")
     logger.info("calling gdal.Warp")
     gdal.Warp(
         destNameOrDestDS=wgs84_raster_path,
