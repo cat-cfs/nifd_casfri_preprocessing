@@ -3,10 +3,11 @@ import numpy as np
 import pandas as pd
 from nifd_casfri_preprocessing.gis_helpers import gdal_helpers
 from nifd_casfri_preprocessing import casfri_data
+from nifd_casfri_preprocessing import log_helper
 
 
 class ParquetGeoDataset:
-    def __init__(self, data_dir, wgs84=True):
+    def __init__(self, data_dir: str, wgs84: bool):
         self.data_dict: dict[str, pd.DataFrame] = casfri_data.load_parquet(
             data_dir
         )
@@ -52,7 +53,7 @@ class ParquetGeoDataset:
 
 
 def get_layer_subdir(layer_id: int) -> str:
-    pass
+    return f"layer_{layer_id}"
 
 
 def create_layer_index(ds: ParquetGeoDataset, out_dir: str) -> pd.DataFrame:
@@ -62,8 +63,8 @@ def create_layer_index(ds: ParquetGeoDataset, out_dir: str) -> pd.DataFrame:
     layer_index = []
     for _id in all_layer_ids:
         subdir = get_layer_subdir(_id)
-        if not os.path.exists(subdir):
-            os.makedirs(subdir)
+        if not os.path.exists(os.path.join(out_dir, subdir)):
+            os.makedirs(os.path.join(out_dir, subdir))
         layer_index.append(
             (
                 _id,
@@ -86,9 +87,9 @@ def create_layer_index(ds: ParquetGeoDataset, out_dir: str) -> pd.DataFrame:
 
 
 def process_origin(
-    ds: ParquetGeoDataset, out_dir: str, age_relative_year: int
+    layer_id: int, ds: ParquetGeoDataset, out_dir: str, age_relative_year: int
 ) -> None:
-    mean_origin_view = ds.lyr.loc[ds.lyr.layer == 1][
+    mean_origin_view = ds.lyr.loc[ds.lyr["layer"] == layer_id][
         ["cas_id", "origin_upper", "origin_lower"]
     ].copy()
     mean_origin_view = ds.geo_lookup.merge(
@@ -154,7 +155,9 @@ def process_origin(
     )
 
 
-def process_leading_species(ds: ParquetGeoDataset, out_dir: str) -> None:
+def process_leading_species(
+    layer_id: int, ds: ParquetGeoDataset, out_dir: str
+) -> None:
     leading_species_view = ds.lyr[ds.lyr.layer == 1][
         ["cas_id", "species_1"]
     ].copy()
@@ -198,8 +201,10 @@ def process_leading_species(ds: ParquetGeoDataset, out_dir: str) -> None:
     )
 
 
-def process_disturbance_events(ds: ParquetGeoDataset, out_dir: str) -> None:
-    dist_view = ds.dst[ds.dst["layer"] == 1].copy()
+def process_disturbance_events(
+    layer_id: int, ds: ParquetGeoDataset, out_dir: str
+) -> None:
+    dist_view = ds.dst[ds.dst["layer"] == layer_id].copy()
     for disturbance_col_num in range(1, 4):
         data_cols = [
             f"dist_type_{disturbance_col_num}",
@@ -256,13 +261,15 @@ def process_disturbance_events(ds: ParquetGeoDataset, out_dir: str) -> None:
         )
 
 
-def process_species_components(ds: ParquetGeoDataset, out_dir: str) -> None:
+def process_species_components(
+    layer_id: int, ds: ParquetGeoDataset, out_dir: str
+) -> None:
 
     species_cols = []
     for x in range(1, 11):
         species_cols.extend([f"species_{x}", f"species_per_{x}"])
 
-    species_view = ds.lyr[ds.lyr["layer"] == 1][
+    species_view = ds.lyr[ds.lyr["layer"] == layer_id][
         ["cas_id"] + species_cols
     ].copy()
 
@@ -330,3 +337,28 @@ def process_species_components(ds: ParquetGeoDataset, out_dir: str) -> None:
         header=["raster_id"] + species_cols,
         index=False,
     )
+
+
+def process(data_dir, wgs84, out_dir):
+    ds = ParquetGeoDataset(data_dir, wgs84)
+    layer_index = create_layer_index(ds, out_dir)
+    lyr_layer_ids = [
+        int(x)
+        for x in layer_index[layer_index["defined_in_lyr"]]["casfri_layer_id"]
+    ]
+    dst_layer_ids = [
+        int(x)
+        for x in layer_index[layer_index["defined_in_dst"]]["casfri_layer_id"]
+    ]
+    for layer_id in lyr_layer_ids:
+        layer_subdir = os.path.join(out_dir, get_layer_subdir(layer_id))
+        log_helper.info("process origin data")
+        process_origin(layer_id, ds, layer_subdir)
+        log_helper.info("process leading species data")
+        process_leading_species(layer_id, ds, layer_subdir)
+        log_helper.info("process species components data")
+        process_species_components(layer_id, ds, layer_subdir)
+    for layer_id in dst_layer_ids:
+        layer_subdir = os.path.join(out_dir, get_layer_subdir(layer_id))
+        log_helper.info("process disturbance events data")
+        process_disturbance_events(layer_subdir, ds, layer_subdir)
