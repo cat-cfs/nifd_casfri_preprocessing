@@ -205,7 +205,7 @@ def process_leading_species(
 def process_disturbance_events(
     layer_id: int, ds: ParquetGeoDataset, out_dir: str
 ) -> None:
-    
+
     for disturbance_col_num in range(1, 4):
         dist_view = ds.dst[ds.dst["layer"] == layer_id].copy()
         data_cols = [
@@ -315,10 +315,10 @@ def process_species_components(
         .reshape(ds.raster.data.shape)
     )
     out_species_composition_path = os.path.join(
-        out_dir, "species_composition_1.tiff"
+        out_dir, "species_composition.tiff"
     )
     out_species_composition_att_path = os.path.join(
-        out_dir, "species_composition_1.csv"
+        out_dir, "species_composition.csv"
     )
     gdal_helpers.create_empty_raster(
         ds.base_raster_path,
