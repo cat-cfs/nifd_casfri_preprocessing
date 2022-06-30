@@ -1,17 +1,22 @@
 import os
+import numpy as np
 import pandas as pd
 from nifd_casfri_preprocessing.gis_helpers import gdal_helpers
 from nifd_casfri_preprocessing import casfri_data
 
 
 class ParquetGeoDataset:
-    def __init__(self, data_dir, inventory_id, wgs84=True):
+    def __init__(self, data_dir, wgs84=True):
         self.data_dict: dict[str, pd.DataFrame] = casfri_data.load_parquet(
             data_dir
         )
         raster_filename = "cas_id_wgs84.tiff" if wgs84 else "cas_id.tiff"
-        base_raster_path = os.path.join(data_dir, raster_filename)
-        self.raster = gdal_helpers.read_dataset(base_raster_path)
+        self.base_raster_path = os.path.join(data_dir, raster_filename)
+        self.raster = gdal_helpers.read_dataset(self.base_raster_path)
+
+    @property
+    def base_raster_path(self) -> str:
+        return self.base_raster_path
 
     @property
     def raster(self) -> gdal_helpers.GDALHelperDataset:
@@ -51,6 +56,7 @@ def process_species_components(ds: ParquetGeoDataset, out_dir: str) -> None:
     species_cols = []
     for x in range(1, 11):
         species_cols.extend([f"species_{x}", f"species_per_{x}"])
+
     species_view = ds.lyr[ds.lyr.layer == 1][["cas_id"] + species_cols].copy()
 
     keep_cols = species_cols.copy()
@@ -97,7 +103,7 @@ def process_species_components(ds: ParquetGeoDataset, out_dir: str) -> None:
         out_dir, "species_composition_1.csv"
     )
     gdal_helpers.create_empty_raster(
-        base_raster_path,
+        ds.base_raster_path,
         out_species_composition_path,
         data_type=np.int32,
         nodata=-1,
