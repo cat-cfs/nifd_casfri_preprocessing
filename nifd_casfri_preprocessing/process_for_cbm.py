@@ -7,6 +7,7 @@ from nifd_casfri_preprocessing import log_helper
 
 logger = log_helper.get_logger()
 
+
 class ParquetGeoDataset:
     def __init__(self, data_dir: str, wgs84: bool):
         self._data_dict: dict[str, pd.DataFrame] = casfri_data.load_parquet(
@@ -341,7 +342,9 @@ def process_species_components(
     )
 
 
-def process(data_dir: str, wgs84: bool, age_relative_year: int, out_dir: str) -> None:
+def process(
+    data_dir: str, wgs84: bool, age_relative_year: int, out_dir: str
+) -> None:
     logger.info(f"loading dataset from {data_dir}")
     ds = ParquetGeoDataset(data_dir, wgs84)
 
