@@ -24,6 +24,7 @@ def summary_app_main(args):
             "tables"
         ),
         required=True,
+        type=os.path.abspath
     )
     parser.add_argument(
         "--report_output_dir",
@@ -32,6 +33,7 @@ def summary_app_main(args):
             "Will be created if it does not already exist"
         ),
         required=True,
+        type=os.path.abspath
     )
 
     args = parser.parse_args(args=args)
@@ -42,23 +44,20 @@ def summary_app_main(args):
     logger.info(vars(args))
     try:
 
-        inventory_ids = args.inventory_id_list
-        for inventory_id in inventory_ids:
-            inventory_raw_dir = os.path.join(args.raw_table_dir, inventory_id)
-            report_output_dir = os.path.join(
-                args.report_output_dir, inventory_id
-            )
-            if not os.path.exists(report_output_dir):
-                os.makedirs(report_output_dir)
-            report_writer.generate_report(
-                "summarize_casfri_inventory.md",
-                os.path.join(report_output_dir, f"{inventory_id}"),
-                parameters=dict(
-                    inventory_id=inventory_id,
-                    raw_data_path=inventory_raw_dir,
-                    output_path=report_output_dir,
-                ),
-            )
+        report_output_dir = os.path.join(
+            args.report_output_dir, args.inventory_id
+        )
+        if not os.path.exists(report_output_dir):
+            os.makedirs(report_output_dir)
+        report_writer.generate_report(
+            "summarize_casfri_inventory.md",
+            os.path.join(report_output_dir, f"{args.inventory_id}"),
+            parameters=dict(
+                inventory_id=args.inventory_id,
+                raw_data_path=args.raw_table_dir,
+                output_path=report_output_dir,
+            ),
+        )
 
     except Exception:
         log_helper.get_logger().exception("")
