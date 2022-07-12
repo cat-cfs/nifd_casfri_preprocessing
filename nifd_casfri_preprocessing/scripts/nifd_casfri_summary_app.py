@@ -44,18 +44,15 @@ def summary_app_main(args):
     logger.info(vars(args))
     try:
 
-        report_output_dir = os.path.join(
-            args.report_output_dir, args.inventory_id
-        )
-        if not os.path.exists(report_output_dir):
-            os.makedirs(report_output_dir)
+        if not os.path.exists(args.report_output_dir):
+            os.makedirs(args.report_output_dir)
         report_writer.generate_report(
             "summarize_casfri_inventory.md",
-            os.path.join(report_output_dir, f"{args.inventory_id}"),
+            os.path.join(args.report_output_dir, f"{args.inventory_id}"),
             parameters=dict(
                 inventory_id=args.inventory_id,
                 raw_data_path=args.raw_table_dir,
-                output_path=report_output_dir,
+                output_path=args.report_output_dir,
             ),
         )
 
