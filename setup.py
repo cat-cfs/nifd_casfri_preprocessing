@@ -18,7 +18,7 @@ process_app = "nifd_casfri_preprocessing.scripts.process_for_cbm_app:main"
 console_scripts = [
     "nifd_casfri_extract = " + extract_app,
     "nifd_casfri_summary = " + summary_app,
-    "nifd_casfri_process = " + process_app
+    "nifd_casfri_process = " + process_app,
 ]
 
 setup(

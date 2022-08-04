@@ -24,7 +24,7 @@ def summary_app_main(args):
             "tables"
         ),
         required=True,
-        type=os.path.abspath
+        type=os.path.abspath,
     )
     parser.add_argument(
         "--report_output_dir",
@@ -33,7 +33,7 @@ def summary_app_main(args):
             "Will be created if it does not already exist"
         ),
         required=True,
-        type=os.path.abspath
+        type=os.path.abspath,
     )
 
     args = parser.parse_args(args=args)
