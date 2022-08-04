@@ -50,6 +50,8 @@ def process_app_main(args):
     )
 
     args = parser.parse_args(args=args)
+    if not os.path.exists(args.out_dir):
+        os.makedirs(args.out_dir)
     log_helper.start_logging(args.out_dir, "INFO")
     logger = log_helper.get_logger()
     logger.info(vars(args))
