@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import time
 from nifd_casfri_preprocessing import casfri_data
 from nifd_casfri_preprocessing import log_helper
 
@@ -45,6 +46,8 @@ def extract_main(args):
         os.makedirs(args.output_dir)
     log_helper.start_logging(args.output_dir, "INFO")
     try:
+        start_time = time.time()
+        log_helper.get_logger().info("process start")
         if args.output_format.lower() == "geopackage":
             casfri_data.extract_to_geopackage(
                 args.username,
@@ -70,8 +73,12 @@ def extract_main(args):
                 args.inventory_id,
                 args.resolution,
             )
+
     except Exception:
         log_helper.get_logger().exception("")
+    log_helper.get_logger().info(
+        f"process end. Run time: {time.time() - start_time}"
+    )
 
 
 def main():

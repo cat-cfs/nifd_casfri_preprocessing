@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import time
 from nifd_casfri_preprocessing import log_helper
 from nifd_casfri_preprocessing.notebooks import report_writer
 
@@ -43,7 +44,8 @@ def summary_app_main(args):
     logger = log_helper.get_logger()
     logger.info(vars(args))
     try:
-
+        start_time = time.time()
+        log_helper.get_logger().info("process start")
         if not os.path.exists(args.report_output_dir):
             os.makedirs(args.report_output_dir)
         report_writer.generate_report(
@@ -58,6 +60,9 @@ def summary_app_main(args):
 
     except Exception:
         log_helper.get_logger().exception("")
+    log_helper.get_logger().info(
+        f"process end. Run time: {time.time() - start_time}"
+    )
 
 
 def main():

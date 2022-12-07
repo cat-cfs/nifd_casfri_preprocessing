@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import time
 from nifd_casfri_preprocessing import log_helper
 from nifd_casfri_preprocessing import process_for_cbm
 
@@ -56,6 +57,8 @@ def process_app_main(args):
     logger = log_helper.get_logger()
     logger.info(vars(args))
     try:
+        start_time = time.time()
+        log_helper.get_logger().info("process start")
         process_for_cbm.process(
             data_dir=args.data_dir,
             wgs84=args.wgs84,
@@ -64,6 +67,9 @@ def process_app_main(args):
         )
     except Exception:
         log_helper.get_logger().exception("")
+    log_helper.get_logger().info(
+        f"process end. Run time: {time.time() - start_time}"
+    )
 
 
 def main():
